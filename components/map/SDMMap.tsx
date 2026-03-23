@@ -227,10 +227,11 @@ export default function SDMMap({
       const clusterId = features[0]?.properties?.cluster_id
       if (!clusterId) return
       const source = m.getSource('amenities') as maplibregl.GeoJSONSource
-      source.getClusterExpansionZoom(clusterId, (err: unknown, zoom: number) => {
-        if (err) return
+      source.getClusterExpansionZoom(clusterId).then((zoom: number) => {
         const coords = (features[0].geometry as GeoJSON.Point).coordinates as [number, number]
         m.easeTo({ center: coords, zoom })
+      }).catch(() => {
+        // Handle error silently
       })
     })
   }, [amenities, vizMode])
