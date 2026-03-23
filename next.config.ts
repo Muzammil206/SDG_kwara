@@ -2,6 +2,8 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Turbopack config (Next.js 16 default)
+  turbopack: {},
   // Required for maplibre-gl worker
   webpack: (config) => {
     config.resolve.alias = {
