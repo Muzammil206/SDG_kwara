@@ -1,0 +1,6 @@
+[install]
+# Use bun lockfile
+lockfile = "bun.lockb"
+
+[install.cache]
+dir = "~/.bun/install/cache"

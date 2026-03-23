@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-geist-sans: 'Geist', system-ui, sans-serif;
+}
+
+/* Full-height layout */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* MapLibre GL overrides */
+.maplibregl-map {
+  font-family: inherit;
+}
+
+.maplibregl-popup-content {
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+  font-family: system-ui, sans-serif;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: white !important;
+}
+
+.maplibregl-popup-close-button {
+  font-size: 14px;
+  padding: 4px 8px;
+  color: #999;
+}
+
+.maplibregl-ctrl-group {
+  border-radius: 10px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border: 0.5px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.maplibregl-ctrl button {
+  width: 30px !important;
+  height: 30px !important;
+}
+
+/* MapLibre Draw controls — position below nav on mobile */
+.maplibregl-ctrl-top-left {
+  top: 48px;
+}
+
+/* Safe area for iOS home indicator */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Topbar height */
+.h-13 {
+  height: 52px;
+}
