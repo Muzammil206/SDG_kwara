@@ -20,35 +20,29 @@ export function useAmenities(
     setError(null)
 
     try {
-      const supabase = createClient()
-      let data: Amenity[]
-
-      if (boundaryGeom) {
-        const { data: rpcData, error: rpcErr } = await supabase.rpc(
-          'get_amenities_in_boundary',
-          {
-            boundary_geom: JSON.stringify(boundaryGeom),
-            types: activeLayers,
-          }
-        )
-        if (rpcErr) throw rpcErr
-        data = rpcData ?? []
-      } else {
-        const { data: queryData, error: queryErr } = await supabase
-          .from('amenities')
-          .select('*')
-          .in('amenity_type', activeLayers)
-        if (queryErr) throw queryErr
-        data = queryData ?? []
+      // Build query params
+      const params = new URLSearchParams()
+      activeLayers.forEach(type => params.append('type', type))
+      
+      const response = await fetch(`/api/amenities?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`)
       }
-
+      
+      const result = await response.json()
+      if (result.error) {
+        throw new Error(result.error)
+      }
+      
+      const data = result.data ?? []
       setAmenities(data)
     } catch (err: any) {
       setError(err?.message ?? 'Failed to load amenities')
+      console.error('Error fetching amenities:', err)
     } finally {
       setLoading(false)
     }
-  }, [activeLayers.join(','), boundaryGeom])
+  }, [activeLayers.join(',')])
 
   useEffect(() => {
     fetchAmenities()
@@ -63,13 +57,13 @@ export function useAmenities(
       .channel('amenities-realtime')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'amenities' },
+        { event: '*', schema: 'public', table: 'tanke_oke_odo_survey' },
         () => fetchAmenities()
       )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [activeLayers.join(',')])
+  }, [activeLayers.join(','), fetchAmenities])
 
   return { amenities, loading, error, refetch: fetchAmenities }
 }

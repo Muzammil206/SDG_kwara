@@ -1,13 +1,15 @@
 'use client'
+import Image from "next/image"
+import { User } from "lucide-react"
 
 export default function Topbar() {
   return (
     <header className="h-13 flex-shrink-0 flex items-center px-4 gap-3 bg-white border-b border-gray-100 z-50">
       {/* Logo */}
-      <div className="flex items-center gap-2.5 flex-shrink-0">
-        <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
-          <GlobeIcon />
-        </div>
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        
+          <Image src="/logo1.png" alt="Logo" width={20} height={20} />
+      
         <span className="text-[13px] font-semibold text-gray-900 tracking-tight">
           Naviss SDM
         </span>
@@ -34,8 +36,8 @@ export default function Topbar() {
         </button>
 
         {/* Avatar */}
-        <div className="w-7 h-7 rounded-full bg-brand flex items-center justify-center text-[10px] font-bold text-white select-none">
-          NT
+        <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+          <User size={12} />
         </div>
       </div>
     </header>

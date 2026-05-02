@@ -6,8 +6,37 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 
  
 import { useAmenities } from '@/lib/hooks/useAmenities'
-import { LAYER_COLORS } from '@/types'
-import type { AmenityType } from '@/types'
+import { LAYER_COLORS, LAYER_LABELS } from '@/types'
+import type { AmenityType, Amenity } from '@/types'
+
+// Custom icon SVGs for each amenity type (larger for better visibility)
+const AMENITY_ICONS: Record<AmenityType, string> = {
+  health: `<svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="24" cy="12" rx="12" ry="8" fill="#E63946"/>
+    <path d="M12 15C8 18 5 22 5 27C5 38 24 52 24 52C24 52 43 38 43 27C43 22 40 18 36 15L24 30L12 15Z" fill="#E63946"/>
+    <path d="M24 22L24 30M20 26L28 26" stroke="white" stroke-width="2" stroke-linecap="round"/>
+  </svg>`,
+  
+  power: `<svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="24" cy="12" rx="12" ry="8" fill="#F4A261"/>
+    <path d="M12 15C8 18 5 22 5 27C5 38 24 52 24 52C24 52 43 38 43 27C43 22 40 18 36 15L24 30L12 15Z" fill="#F4A261"/>
+    <path d="M24 18L27 25L34 25L28 30L31 38L24 33L17 38L20 30L14 25L21 25L24 18Z" fill="white"/>
+  </svg>`,
+  
+  water: `<svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="24" cy="12" rx="12" ry="8" fill="#2196F3"/>
+    <path d="M12 15C8 18 5 22 5 27C5 38 24 52 24 52C24 52 43 38 43 27C43 22 40 18 36 15L24 30L12 15Z" fill="#2196F3"/>
+    <circle cx="24" cy="25" r="4" fill="white"/>
+    <path d="M24 29V34" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`,
+  
+  road: `<svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="24" cy="12" rx="12" ry="8" fill="#6D4C41"/>
+    <path d="M12 15C8 18 5 22 5 27C5 38 24 52 24 52C24 52 43 38 43 27C43 22 40 18 36 15L24 30L12 15Z" fill="#6D4C41"/>
+    <rect x="20" y="18" width="8" height="14" fill="white"/>
+    <circle cx="24" cy="35" r="1.5" fill="white"/>
+  </svg>`,
+}
 
 // ─── Tile styles (all free, no token) ────────────────────────────────────────
 export const TILE_STYLES = {
@@ -17,6 +46,11 @@ export const TILE_STYLES = {
 } as const
 
 export type BasemapKey = keyof typeof TILE_STYLES
+
+// Get data URL for icon
+function getIconDataUrl(svgString: string): string {
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString)
+}
 
 // Kwara State center [lng, lat]
 const KWARA_CENTER: [number, number] = [4.5291, 8.9669]
@@ -86,7 +120,51 @@ export default function SDMMap({
       setBoundaryGeom(null)
       onBoundaryChange?.(null)
     })
-    map.current.on('load', () => setMapReady(true))
+    map.current.on('load', () => {
+      // Add custom icons for each amenity type using canvas
+      const loadIcon = (type: AmenityType): Promise<void> => {
+        return new Promise((resolve) => {
+          if (map.current?.hasImage(type)) {
+            resolve()
+            return
+          }
+          
+          const canvas = document.createElement('canvas')
+          canvas.width = 48
+          canvas.height = 56
+          
+          const img = new Image()
+          img.onload = () => {
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, 48, 56)
+              const imageData = ctx.getImageData(0, 0, 48, 56)
+              
+              if (map.current && !map.current.hasImage(type)) {
+                map.current.addImage(type, imageData, { pixelRatio: 1 })
+              }
+            }
+            resolve()
+          }
+          img.onerror = () => {
+            console.error(`Failed to load ${type} icon`)
+            resolve()
+          }
+          img.src = getIconDataUrl(AMENITY_ICONS[type])
+        })
+      }
+
+      // Load all icons in parallel
+      Promise.all([
+        loadIcon('health'),
+        loadIcon('power'),
+        loadIcon('water'),
+        loadIcon('road'),
+      ]).then(() => {
+        console.log('All icons loaded')
+        setMapReady(true)
+      })
+    })
 
     return () => {
       map.current?.remove()
@@ -110,25 +188,80 @@ export default function SDMMap({
     updateLayers()
   }, [amenities, vizMode, mapReady]) // eslint-disable-line
 
+  // ── Zoom to first amenity when data loads ──────────────────────────────────────
+  useEffect(() => {
+    if (!map.current || !mapReady || amenities.length === 0) return
+    
+    // Delay zoom to ensure layers are rendered
+    const timer = setTimeout(() => {
+      const firstAmenity = amenities[0]
+      if (!firstAmenity.location?.coordinates) return
+      
+      const [lng, lat] = firstAmenity.location.coordinates
+      console.log('Zooming to first amenity:', { lng, lat, name: firstAmenity.name })
+      map.current?.easeTo({
+        center: [lng, lat],
+        zoom: 14,
+        duration: 1000,
+      })
+    }, 500)
+    
+    return () => clearTimeout(timer)
+  }, [amenities, mapReady]) // eslint-disable-line
+
   const updateLayers = useCallback(() => {
     const m = map.current
     if (!m || !m.isStyleLoaded()) return
 
+    console.log('Updating layers with', amenities.length, 'amenities')
+
+    // Build features with better coordinate handling
+    const features = amenities
+      .map((a: Amenity) => {
+        let coords: [number, number] | null = null
+
+        // Try to get coordinates from location.coordinates first
+        if (a.location && typeof a.location === 'object' && 'coordinates' in a.location) {
+          const coord = (a.location as any).coordinates
+          if (Array.isArray(coord) && coord.length === 2) {
+            coords = [coord[0], coord[1]] as [number, number]
+          }
+        }
+        
+        // Fallback to longitude/latitude if available
+        if (!coords && a.longitude !== undefined && a.latitude !== undefined) {
+          coords = [a.longitude, a.latitude] as [number, number]
+        }
+
+        if (!coords) {
+          console.warn('No coordinates for amenity:', a.name)
+          return null
+        }
+
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: coords,
+          },
+          properties: {
+            id: a.id,
+            name: a.name,
+            amenity_type: a.amenity_type,
+            sub_type: a.sub_type ?? a.amenity_type,
+            status: a.status,
+            color: LAYER_COLORS[a.amenity_type],
+          },
+        } as any
+      })
+      .filter((f) => f !== null) as any[]
+
     const geojson: GeoJSON.FeatureCollection = {
       type: 'FeatureCollection',
-      features: amenities.map(a => ({
-        type: 'Feature',
-        geometry: a.location,
-        properties: {
-          id: a.id,
-          name: a.name,
-          amenity_type: a.amenity_type,
-          sub_type: a.sub_type ?? a.amenity_type,
-          status: a.status,
-          color: LAYER_COLORS[a.amenity_type],
-        },
-      })),
+      features: features,
     }
+
+    console.log('GeoJSON features created:', geojson.features.length)
 
     // Remove existing layers & source
     const layerIds = [
@@ -201,16 +334,19 @@ export default function SDMMap({
 
     m.addLayer({
       id: 'sdm-markers',
-      type: 'circle',
+      type: 'symbol',
       source: 'amenities',
       filter: ['!', ['has', 'point_count']],
+      layout: {
+        'icon-image': ['get', 'amenity_type'],
+        'icon-size': 0.8,
+        'icon-allow-overlap': true,
+        'icon-anchor': 'bottom',
+        'text-field': '',
+      },
       paint: {
-        'circle-color': ['get', 'color'],
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 4, 14, 11],
-        'circle-stroke-color': '#fff',
-        'circle-stroke-width': 2,
-        'circle-opacity': [
-          'case', ['==', ['get', 'status'], 'functional'], 1, 0.45,
+        'icon-opacity': [
+          'case', ['==', ['get', 'status'], 'functional'], 1, 0.55,
         ],
       },
     })

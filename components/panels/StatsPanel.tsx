@@ -14,13 +14,18 @@ export default function StatsPanel({ activeLayers, selectedAmenity, onClose }: P
   const { totals, stats, loading } = useLGAStats()
   const { alerts } = useAlerts(5)
 
-  // Top 5 LGAs for health facilities
-  const healthByLGA = stats
-    .filter(s => s.amenity_type === 'health')
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
+  // Get top 5 LGAs for each active layer
+  const getTopLGAsForType = (type: AmenityType) => {
+    return stats
+      .filter(s => s.amenity_type === type)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+  }
 
-  const maxCount = healthByLGA[0]?.count ?? 1
+  // Show stats for the first active layer
+  const displayType = activeLayers[0] as AmenityType
+  const topLGAs = displayType ? getTopLGAsForType(displayType) : []
+  const maxCount = topLGAs[0]?.count ?? 1
 
   return (
     <div className="flex flex-col h-full">
@@ -66,11 +71,13 @@ export default function StatsPanel({ activeLayers, selectedAmenity, onClose }: P
 
         {/* LGA bar chart */}
         <div className="px-3 pb-3 border-t border-gray-50 pt-3">
-          <p className="text-[11px] font-medium text-gray-400 mb-3">Health facilities by LGA</p>
-          {healthByLGA.length === 0 && !loading && (
+          <p className="text-[11px] font-medium text-gray-400 mb-3">
+            {displayType ? LAYER_LABELS[displayType] : 'Data'} facilities by LGA
+          </p>
+          {topLGAs.length === 0 && !loading && (
             <p className="text-[11px] text-gray-300 text-center py-4">No data</p>
           )}
-          {healthByLGA.map(row => (
+          {topLGAs.map((row: any) => (
             <div key={row.lga_id} className="flex items-center gap-2 mb-2">
               <span className="text-[10px] text-gray-400 w-16 text-right flex-shrink-0 truncate">
                 {row.lga_name.replace(' Local Government', '')}
@@ -80,7 +87,7 @@ export default function StatsPanel({ activeLayers, selectedAmenity, onClose }: P
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${(row.count / maxCount) * 100}%`,
-                    background: LAYER_COLORS.health,
+                    background: displayType ? LAYER_COLORS[displayType] : '#999',
                     opacity: 0.75,
                   }}
                 />

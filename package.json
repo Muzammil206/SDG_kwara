@@ -13,6 +13,7 @@
     "@birkskyum/maplibre-gl-draw": "npm:@jsr/birkskyum__maplibre-gl-draw",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
+    "lucide-react": "^1.14.0",
     "maplibre-gl": "^4.7.0",
     "maplibre-gl-draw": "^1.6.9",
     "next": "16.2.1",

@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { AmenityStatusLog } from '@/types'
 
 interface AlertWithMeta extends AmenityStatusLog {
@@ -13,38 +12,26 @@ export function useAlerts(limit = 5) {
   const [loading, setLoading] = useState(true)
 
   const fetchAlerts = async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('amenity_status_log')
-      .select(`
-        *,
-        amenities ( name, amenity_type )
-      `)
-      .order('changed_at', { ascending: false })
-      .limit(limit)
-
-    const mapped = (data ?? []).map((row: any) => ({
-      ...row,
-      amenity_name: row.amenities?.name ?? 'Unknown',
-      amenity_type: row.amenities?.amenity_type ?? 'unknown',
-    }))
-    setAlerts(mapped)
-    setLoading(false)
+    try {
+      const response = await fetch(`/api/alerts?limit=${limit}`)
+      if (!response.ok) throw new Error('Failed to fetch alerts')
+      
+      const result = await response.json()
+      setAlerts(result.data ?? [])
+    } catch (err) {
+      console.error('Error fetching alerts:', err)
+      setAlerts([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
     fetchAlerts()
-    const supabase = createClient()
-    const channel = supabase
-      .channel('alerts-realtime')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'amenity_status_log' },
-        () => fetchAlerts()
-      )
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
-  }, [])
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000)
+    return () => clearInterval(interval)
+  }, [limit])
 
   return { alerts, loading }
 }

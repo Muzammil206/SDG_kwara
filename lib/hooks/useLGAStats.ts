@@ -1,6 +1,5 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { LGAStat } from '@/types'
 
 export function useLGAStats() {
@@ -8,13 +7,23 @@ export function useLGAStats() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase
-      .rpc('get_lga_stats')
-      .then(({ data }) => {
-        setStats(data ?? [])
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/lga-stats')
+        if (!response.ok) throw new Error('Failed to fetch stats')
+        
+        const result = await response.json()
+        setStats(result.data ?? [])
+        console.log('LGA Stats loaded:', result.data?.length, 'rows')
+      } catch (err) {
+        console.error('Error fetching LGA stats:', err)
+        setStats([])
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+
+    fetchStats()
   }, [])
 
   // Totals per type

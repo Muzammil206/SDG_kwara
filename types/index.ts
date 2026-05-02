@@ -10,17 +10,30 @@ export type AmenityStatus =
 export interface Amenity {
   id: string
   name: string
+  raw_name?: string
   amenity_type: AmenityType
   sub_type: string | null
   /** GeoJSON Point {type:'Point', coordinates:[lng,lat]} */
   location: { type: 'Point'; coordinates: [number, number] }
   geometry: GeoJSON.Geometry | null
   lga_id: string | null
+  lga?: string
+  neighbourhood?: string
+  address?: string
+  longitude?: number
+  latitude?: number
+  elevation_m?: number
   status: AmenityStatus
   attributes: Record<string, unknown>
   verified_at: string | null
+  survey_date?: string
+  survey_time?: string
+  surveyor_note?: string
+  source?: string
+  data_collector?: string
   created_at: string
-  created_by: string | null
+  updated_at?: string
+  created_by?: string | null
 }
 
 export interface LGA {

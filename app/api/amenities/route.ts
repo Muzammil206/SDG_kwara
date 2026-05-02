@@ -12,16 +12,16 @@ export async function GET(req: NextRequest) {
   const supabase = await createClient()
 
   let query = supabase
-    .from('amenities')
+    .from('tanke_oke_odo_survey')
     .select('*')
     .limit(limit)
 
   if (types.length)  query = query.in('amenity_type', types)
-  if (lga)           query = query.eq('lga_id', lga)
+  if (lga)           query = query.eq('lga', lga)
   if (status)        query = query.eq('status', status)
 
   const { data, error } = await query
-
+  
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
