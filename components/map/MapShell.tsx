@@ -34,6 +34,7 @@ export default function MapShell() {
   const [selectedAmenity, setSelectedAmenity] = useState<Record<string, unknown> | null>(null)
   const [mobileTab, setMobileTab]       = useState<MobileTab>('map')
   const [drawerTab, setDrawerTab]       = useState<DrawerTab>('layers')
+  const [triggerDraw, setTriggerDraw]   = useState(0)
 
   const toggleLayer = useCallback((type: AmenityType) => {
     setActiveLayers(prev =>
@@ -58,6 +59,7 @@ export default function MapShell() {
           vizMode={vizMode}
           basemap={basemap}
           onAmenityClick={setSelectedAmenity}
+          triggerDrawPolygon={triggerDraw}
         />
       </div>
 
@@ -113,6 +115,10 @@ export default function MapShell() {
           vizMode={vizMode}
           onVizChange={v => setVizMode(v)}
           onClose={() => setLeftOpen(false)}
+          onDrawBoundary={() => {
+            setTriggerDraw(prev => prev + 1)
+            // optionally auto-close left panel on mobile?
+          }}
         />
       </aside>
 
@@ -144,6 +150,10 @@ export default function MapShell() {
         vizMode={vizMode}
         onVizChange={v => setVizMode(v)}
         onClose={() => setMobileTab('map')}
+        onDrawBoundary={() => {
+          setTriggerDraw(prev => prev + 1)
+          setMobileTab('map') // close drawer to see the map
+        }}
       />
 
       {/* ── MOBILE: Bottom nav bar ────────────────────────────────────── */}

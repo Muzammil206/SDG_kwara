@@ -14,11 +14,12 @@ interface Props {
   vizMode: 'markers' | 'heatmap' | 'choropleth'
   onVizChange: (v: any) => void
   onClose: () => void
+  onDrawBoundary?: () => void
 }
 
 export default function MobileDrawer({
   open, activeTab, onTabChange,
-  activeLayers, onToggle, vizMode, onVizChange, onClose,
+  activeLayers, onToggle, vizMode, onVizChange, onClose, onDrawBoundary
 }: Props) {
   const TABS: { key: DrawerTab; label: string }[] = [
     { key: 'layers', label: 'Layers' },
@@ -77,6 +78,7 @@ export default function MobileDrawer({
               onToggle={onToggle}
               vizMode={vizMode}
               onVizChange={onVizChange}
+              onDrawBoundary={onDrawBoundary}
             />
           )}
           {activeTab === 'stats' && (
@@ -87,11 +89,22 @@ export default function MobileDrawer({
               <p className="text-[10px] font-medium uppercase tracking-widest text-gray-300 mb-2">LGA</p>
               <select className="w-full text-[12px] px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 mb-4 focus:outline-none">
                 <option>All LGAs</option>
-                <option>Ilorin West</option>
-                <option>Ilorin East</option>
-                <option>Offa</option>
+                <option>Asa</option>
+                <option>Baruten</option>
                 <option>Edu</option>
-                <option>Kwara North</option>
+                <option>Ekiti</option>
+                <option>Ifelodun</option>
+                <option>Ilorin East</option>
+                <option>Ilorin South</option>
+                <option>Ilorin West</option>
+                <option>Irepodun</option>
+                <option>Isin</option>
+                <option>Kaiama</option>
+                <option>Moro</option>
+                <option>Offa</option>
+                <option>Oke Ero</option>
+                <option>Oyun</option>
+                <option>Pategi</option>
               </select>
               <p className="text-[10px] font-medium uppercase tracking-widest text-gray-300 mb-2">Status</p>
               <select className="w-full text-[12px] px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 mb-4 focus:outline-none">
@@ -101,7 +114,7 @@ export default function MobileDrawer({
                 <option>Under construction</option>
               </select>
               <p className="text-[10px] font-medium uppercase tracking-widest text-gray-300 mb-2">Study Area</p>
-              <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-[12px] rounded-lg border border-gray-200 text-gray-500 mb-2 hover:bg-gray-50">
+              <button onClick={onDrawBoundary} className="w-full text-left flex items-center gap-2 px-3 py-2 text-[12px] rounded-lg border border-gray-200 text-gray-500 mb-2 hover:bg-gray-50">
                 Draw boundary
               </button>
               <button className="w-full text-left flex items-center gap-2 px-3 py-2 text-[12px] rounded-lg border border-gray-200 text-gray-500 mb-4 hover:bg-gray-50">

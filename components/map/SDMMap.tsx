@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import MaplibreDraw from 'maplibre-gl-draw'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import 'maplibre-gl-draw/dist/mapbox-gl-draw.css'
 
  
 import { useAmenities } from '@/lib/hooks/useAmenities'
@@ -63,6 +64,7 @@ interface Props {
   basemap: BasemapKey
   onAmenityClick?: (amenity: Record<string, unknown>) => void
   onBoundaryChange?: (geom: GeoJSON.Polygon | null) => void
+  triggerDrawPolygon?: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -72,6 +74,7 @@ export default function SDMMap({
   basemap,
   onAmenityClick,
   onBoundaryChange,
+  triggerDrawPolygon,
 }: Props) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -97,7 +100,12 @@ export default function SDMMap({
     // Draw control
     draw.current = new MaplibreDraw({
       displayControlsDefault: false,
-      controls: { polygon: true, trash: true },
+      controls: {
+        point: true,
+        line_string: true,
+        polygon: true,
+        trash: true
+      },
       styles: drawStyles,
     }) as unknown as MaplibreDraw
 
@@ -112,6 +120,11 @@ export default function SDMMap({
     )
 
     map.current.on('draw.create', (e: any) => {
+      const geom = e.features[0]?.geometry as GeoJSON.Polygon ?? null
+      setBoundaryGeom(geom)
+      onBoundaryChange?.(geom)
+    })
+    map.current.on('draw.update', (e: any) => {
       const geom = e.features[0]?.geometry as GeoJSON.Polygon ?? null
       setBoundaryGeom(geom)
       onBoundaryChange?.(geom)
@@ -172,6 +185,14 @@ export default function SDMMap({
       setMapReady(false)
     }
   }, []) // eslint-disable-line
+
+  // ── Trigger drawing programmatically ─────────────────────────────────────────
+  useEffect(() => {
+    if (triggerDrawPolygon && draw.current) {
+      // @ts-ignore - mapbox-gl-draw types might be missing changeMode
+      draw.current.changeMode('draw_polygon')
+    }
+  }, [triggerDrawPolygon])
 
   // ── Basemap swap ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -380,25 +401,52 @@ export default function SDMMap({
     const props = e.features[0].properties ?? {}
     const coords = (e.features[0].geometry as GeoJSON.Point).coordinates as [number, number]
 
-    popup.current?.remove()
-    popup.current = new maplibregl.Popup({ maxWidth: '260px', offset: 12 })
+    const amenityType = props['amenity_type'] ?? ''
+    const typeColor = amenityType === 'health' ? '#E63946' : 
+                      amenityType === 'power' ? '#F4A261' : 
+                      amenityType === 'water' ? '#2196F3' : '#6D4C41'
+                      
+    const status = props['status'] ?? 'unknown'
+    const statusColor = status === 'functional' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 
+                        status === 'non_functional' ? 'text-red-700 bg-red-50 border-red-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+    const statusDot = status === 'functional' ? 'bg-emerald-500' : 
+                      status === 'non_functional' ? 'bg-red-500' : 'bg-amber-500'
+
+    popup.current = new maplibregl.Popup({ maxWidth: '320px', offset: 12, className: 'premium-popup' })
       .setLngLat(coords)
       .setHTML(`
-        <div style="font-size:13px;font-family:system-ui,sans-serif;padding:2px 0">
-          <div style="font-weight:600;margin-bottom:3px;color:#111">${props['name'] ?? ''}</div>
-          <div style="color:#777;font-size:11px;margin-bottom:8px;text-transform:capitalize">
-            ${(props['sub_type'] ?? props['amenity_type'] ?? '').replace(/_/g,' ')}
+        <div class="flex flex-col gap-3 min-w-[220px]">
+          <div class="flex items-start justify-between gap-4 pr-5">
+            <div>
+              <div class="text-[10px] font-bold tracking-widest uppercase text-gray-500 mb-1.5 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full shadow-sm" style="background-color: ${typeColor}"></span>
+                ${String(amenityType).replace(/_/g,' ')}
+              </div>
+              <h3 class="text-[16px] font-bold text-gray-900 leading-tight" style="font-family: var(--font-geist-sans)">
+                ${props['name'] ?? 'Unknown Location'}
+              </h3>
+              <p class="text-[12px] text-gray-500 capitalize mt-1">
+                ${(props['sub_type'] ?? amenityType).replace(/_/g,' ')}
+              </p>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
-            <span style="color:#999">Status</span>
-            <span style="font-weight:500;color:${props['status'] === 'functional' ? '#1A5F3F' : props['status'] === 'non_functional' ? '#E63946' : '#F4A261'}">
-              ${String(props['status'] ?? '').replace(/_/g,' ')}
-            </span>
+          
+          <div class="h-px w-full bg-gray-100 my-0.5"></div>
+          
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] text-gray-400 font-medium tracking-wide">STATUS</span>
+            <div class="flex items-center gap-1.5 px-2 py-1 rounded-md border ${statusColor}">
+              <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+              <span class="text-[10px] font-bold uppercase tracking-wider">${String(status).replace(/_/g,' ')}</span>
+            </div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px">
-            <span style="color:#999">Layer</span>
-            <span style="text-transform:capitalize">${props['amenity_type'] ?? ''}</span>
-          </div>
+          
+          <button class="mt-1.5 w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-[12px] font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+            View Details
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6H9.5M9.5 6L6.5 3M9.5 6L6.5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
       `)
       .addTo(m)
@@ -437,6 +485,15 @@ const drawStyles = [
     type: 'line',
     filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
     paint: { 'line-color': '#1A5F3F', 'line-width': 2, 'line-dasharray': [4, 2] },
+  },
+  {
+    id: 'gl-draw-line',
+    type: 'line',
+    filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+    paint: {
+      'line-color': '#1A5F3F',
+      'line-width': 2,
+    },
   },
   {
     id: 'gl-draw-point',

@@ -36,6 +36,36 @@ body {
   color: #999;
 }
 
+/* Premium Popup Customizations */
+.premium-popup .maplibregl-popup-content {
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.premium-popup .maplibregl-popup-close-button {
+  top: 12px;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.premium-popup .maplibregl-popup-close-button:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
 .maplibregl-ctrl-group {
   border-radius: 10px !important;
   overflow: hidden;
@@ -48,9 +78,28 @@ body {
   height: 30px !important;
 }
 
-/* MapLibre Draw controls — position below nav on mobile */
+/* MapLibre Draw controls — center at the top */
 .maplibregl-ctrl-top-left {
-  top: 48px;
+  top: 60px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  z-index: 40 !important;
+}
+
+.maplibregl-ctrl-top-left .maplibregl-ctrl-group {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+.mapboxgl-ctrl-top-left {
+  top: 60px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  flex-direction: row !important;
+  z-index: 40 !important;
 }
 
 /* Safe area for iOS home indicator */

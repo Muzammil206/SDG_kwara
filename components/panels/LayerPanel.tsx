@@ -10,10 +10,11 @@ interface Props {
   vizMode: VizMode
   onVizChange: (v: VizMode) => void
   onClose?: () => void
+  onDrawBoundary?: () => void
 }
 
 export default function LayerPanel({
-  activeLayers, onToggle, vizMode, onVizChange, onClose,
+  activeLayers, onToggle, vizMode, onVizChange, onClose, onDrawBoundary
 }: Props) {
   return (
     <div className="flex flex-col h-full">
@@ -69,7 +70,7 @@ export default function LayerPanel({
 
         {/* Study Area */}
         <Section label="Study Area">
-          <ActionBtn icon={<DrawIcon />} label="Draw boundary" />
+          <ActionBtn icon={<DrawIcon />} label="Draw boundary" onClick={onDrawBoundary} />
           <ActionBtn icon={<UploadIcon />} label="Upload GeoJSON" />
           <ActionBtn icon={<TableIcon />} label="Select by LGA" />
         </Section>
@@ -79,13 +80,22 @@ export default function LayerPanel({
           <label className="block text-[11px] text-gray-400 mb-1">LGA</label>
           <select className="w-full text-[12px] px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 mb-3 focus:outline-none focus:border-brand/50">
             <option>All LGAs</option>
-            <option>Ilorin West</option>
-            <option>Ilorin East</option>
-            <option>Offa</option>
+            <option>Asa</option>
+            <option>Baruten</option>
             <option>Edu</option>
-            <option>Kwara North</option>
+            <option>Ekiti</option>
+            <option>Ifelodun</option>
+            <option>Ilorin East</option>
+            <option>Ilorin South</option>
+            <option>Ilorin West</option>
+            <option>Irepodun</option>
+            <option>Isin</option>
+            <option>Kaiama</option>
             <option>Moro</option>
-            <option>Patigi</option>
+            <option>Offa</option>
+            <option>Oke Ero</option>
+            <option>Oyun</option>
+            <option>Pategi</option>
           </select>
           <label className="block text-[11px] text-gray-400 mb-1">Status</label>
           <select className="w-full text-[12px] px-2.5 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-brand/50">
@@ -140,9 +150,9 @@ function LayerRow({ type, active, onToggle }: {
   )
 }
 
-function ActionBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+function ActionBtn({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
-    <button className="w-full flex items-center gap-2 px-2.5 py-2 text-[12px] rounded-lg border border-gray-100 bg-white text-gray-500 hover:bg-gray-50 mb-1 transition-colors">
+    <button onClick={onClick} className="w-full flex items-center gap-2 px-2.5 py-2 text-[12px] rounded-lg border border-gray-100 bg-white text-gray-500 hover:bg-gray-50 mb-1 transition-colors">
       <span className="flex-shrink-0 text-gray-400">{icon}</span>
       {label}
     </button>
